@@ -4,8 +4,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from math import sqrt
+import matplotlib.pyplot as plt
 from torch.nn.init import kaiming_uniform_
-
+import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
@@ -158,14 +160,50 @@ class LTCluster:
         return self.treeID[cur_id]
 
 
-def LT_loss(s, c_id, treeID, AL, alpha=1):
+def LT_loss(s, c_id, treeID, AL, alpha=2):
+    # 定义全局变量存储数据
+    global loss1_data, loss2_data, total_loss_data,epoch_count
+    # 首次调用函数时初始化数据存储列表
+    if 'loss1_data' not in globals():
+        loss1_data, loss2_data, total_loss_data,epoch_count = [], [], [],0
     loss1, loss2 = 0, 0
+    loss1_list, loss2_list, total_loss_list = [], [], []
+    plt.figure(figsize=(10, 8))
     for i in range(len(c_id)):
         cur_tree_idx = torch.tensor(AL[i], dtype=torch.int64)
         cur_idx = c_id[i]
         loss1 += s[cur_idx, c_id].sum() / len(c_id)
-
         loss2 += s[cur_idx, cur_tree_idx].sum() / len(AL[i])
+        # print(f"loss1 at step {i}: {s[cur_idx, c_id].sum() / len(c_id)}")
+        # print(f"loss2 at step {i}: {s[cur_idx, cur_tree_idx].sum() / len(AL[i])}")
     loss = loss1 - loss2 * alpha
-
+    # loss1_list.append(loss1.item())
+    # loss2_list.append(loss2.item())
+    # total_loss_list.append(loss.item())
+    # # 打印 loss1, loss2 和总 loss
+    # print(f"alpha: {alpha}, loss1: {loss1}, loss2: {loss2}, total loss: {loss}")
+    # # 动态绘图部分
+    # # 存储损失数据
+    # loss1_data.append(loss1.item())
+    # loss2_data.append(loss2.item())
+    # total_loss_data.append(loss.item())
+    # epoch_count += 1
+    # # 动态绘图部分
+    # fig, ax = plt.subplots()
+    #
+    # if len(loss1_data) > 1:
+    #     ax.clear()  # 清除上一次的绘图
+    # plt.xlabel('Epoch (α=0.5)', fontsize=18)
+    # plt.ylabel('Loss value', fontsize=18)
+    # ax.plot(loss1_data, label='root_loss')
+    # ax.plot(loss2_data, label='nodes_loss')
+    # ax.plot(total_loss_data, label='LT_loss')
+    # # 调整布局，确保所有元素都显示完整
+    # plt.tight_layout()
+    # ax.legend()
+    # plt.pause(0.1)  # 暂停一段时间以更新图像
+    # # 添加图表标题和标签
+    #
+    # if epoch_count == 50:  # 假设你运行 10 个 epoch，这里可以根据实际情况修改
+    #     plt.savefig(f'losses_epoch_{len(loss1_data)}.png')  # 仅在最后一次 epoch 保存图像
     return loss
